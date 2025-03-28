@@ -19,13 +19,29 @@ RUN apk --no-cache add curl jq \
     && wget -qO- https://github.com/6c65726f79/Transmissionic/releases/download/v1.8.0/Transmissionic-webui-v1.8.0.zip | unzip -q - \
     && mv web /opt/transmission-ui/transmissionic
 
-
 FROM ubuntu:22.04 AS base
 
 RUN set -ex; \
     apt-get update; \
-    apt-get dist-upgrade -y; \
-    apt-get install -y --no-install-recommends \
+    apt-get dist-upgrade -y
+
+# Install modern natpmpc 
+RUN apt-get update && apt-get install -y curl
+RUN curl -O http://ftp.us.debian.org/debian/pool/main/libn/libnatpmp/libnatpmp1t64_20230423-1.2+b3_amd64.deb
+RUN dpkg -i libnatpmp1t64_20230423-1.2+b3_amd64.deb || apt-get install -f -y
+RUN rm libnatpmp1t64_20230423-1.2+b3_amd64.deb
+
+RUN curl -O http://ftp.us.debian.org/debian/pool/main/libn/libnatpmp/libnatpmp-dev_20230423-1.2+b3_amd64.deb
+RUN dpkg -i libnatpmp-dev_20230423-1.2+b3_amd64.deb || apt-get install -f -y
+RUN rm libnatpmp-dev_20230423-1.2+b3_amd64.deb
+
+RUN curl -O http://ftp.us.debian.org/debian/pool/main/libn/libnatpmp/natpmpc_20230423-1.2+b3_amd64.deb
+RUN dpkg -i natpmpc_20230423-1.2+b3_amd64.deb || apt-get install -f -y
+RUN rm natpmpc_20230423-1.2+b3_amd64.deb
+
+RUN apt-get update
+
+RUN apt-get install -y --no-install-recommends \
       tzdata \
       iproute2 \
       net-tools \
@@ -37,10 +53,8 @@ RUN set -ex; \
       libevent-dev \
       libfmt-dev \
       libminiupnpc-dev \
-      libnatpmp-dev \
       libpsl-dev \
-      libssl-dev \
-      natpmpc
+      libssl-dev
 
 FROM haugene/transmission-builder:4.0.5 as TransmissionBuilder
 

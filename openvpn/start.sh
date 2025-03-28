@@ -345,4 +345,21 @@ if [[ ${SELFHEAL:-false} != "false" ]]; then
 fi
 
 # shellcheck disable=SC2086
-exec openvpn ${TRANSMISSION_CONTROL_OPTS} ${OPENVPN_OPTS} --config "${CHOSEN_OPENVPN_CONFIG}"
+exec openvpn ${TRANSMISSION_CONTROL_OPTS} ${OPENVPN_OPTS} --config "${CHOSEN_OPENVPN_CONFIG}" &
+
+echo "Waiting for port forward"
+sleep 30
+echo "0" > /proton.port
+echo "Starting port forward"
+while true; do 
+  date; 
+  old_port=$(cat /proton.port)
+  output=$(natpmpc -a 1 0 udp 60 -g 10.2.0.1 && natpmpc -a 1 0 tcp 60 -g 10.2.0.1)
+  new_port=$(echo "$output" | grep -oP 'Mapped public port \K\d+' | head -n 1)
+  if [[ "$new_port" -ne "$old_port" ]]; then
+      /usr/local/bin/transmission-remote -p $new_port
+      echo "New listen port: $new_port"
+      echo $new_port > /proton.port
+  fi
+  sleep 45; 
+done
